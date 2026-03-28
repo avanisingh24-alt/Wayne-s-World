@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wayne's World – Pet Health Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f14;--s:#141720;--s2:#1c2030;--bd:#252a3a;
+  --am:#f5a623;--tl:#2dd4bf;--ro:#fb7185;--gn:#4ade80;--vi:#a78bfa;--or:#fb923c;--bl:#60a5fa;
+  --mu:#5a6180;--tx:#e8ecf5;--t2:#9aa3c0;--r:12px;
+}
+html,body{min-height:100%;overflow-x:hidden}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--tx);font-size:13px}
+
+.nav{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--bd);background:rgba(13,15,20,.98);position:sticky;top:0;z-index:999;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:7px;margin-right:6px}
+.lico{width:28px;height:28px;background:var(--am);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.ltx{font-size:14px;font-weight:800}.ltx span{color:var(--am)}
+.nav-tabs{display:flex;gap:3px;background:var(--s2);padding:3px;border-radius:8px;flex-wrap:wrap}
+.nt{font-family:'DM Mono',monospace;font-size:11px;padding:5px 11px;border:none;border-radius:6px;background:none;color:var(--t2);cursor:pointer;transition:all .18s;user-select:none}
+.nt.active{background:var(--s);color:var(--am)}
+.save-indicator{font-family:'DM Mono',monospace;font-size:10px;color:var(--gn);margin-left:auto;opacity:0;transition:opacity .4s}
+.save-indicator.show{opacity:1}
+
+.page{display:none;padding:16px 16px 60px;max-width:960px;margin:0 auto}
+.page.active{display:block}
+
+.card{background:var(--s);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.ctitle{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin-bottom:11px;display:flex;align-items:center;gap:5px}
+
+.pbanner{background:linear-gradient(135deg,#181200,#0b1812);border:1px solid #3a2e00;border-radius:var(--r);padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pav{width:44px;height:44px;background:linear-gradient(135deg,#2a1f00,#4a3200);border-radius:50%;border:2px solid var(--am);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.pi h2{font-size:14px;font-weight:700}
+.pi p{font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);margin-top:2px}
+.stat-pills{display:flex;gap:7px;flex-wrap:wrap;margin-left:auto}
+.pill{background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:6px 10px;text-align:center;min-width:60px}
+.pill-n{font-size:15px;font-weight:800;color:var(--am)}
+.pill-l{font-family:'DM Mono',monospace;font-size:8px;color:var(--mu);margin-top:1px}
+
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:11px}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu)}
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-family:'DM Mono',monospace;font-size:11px;padding:8px 10px;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--am)}
+textarea{resize:vertical;min-height:55px;line-height:1.6}
+select option{background:#1c2030}
+
+.srow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.slbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);min-width:72px}
+input[type=range]{-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;background:var(--bd);border:none;padding:0;cursor:pointer;flex:1;min-width:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--am);border:2px solid var(--bg);cursor:pointer}
+.sval{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--am);min-width:34px;text-align:right}
+
+.tog-section{margin-bottom:11px}
+.tog-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:6px}
+.tog-row{display:flex;gap:5px;flex-wrap:wrap}
+.tog{font-family:'DM Mono',monospace;font-size:10px;padding:5px 10px;border-radius:14px;border:1px solid var(--bd);background:var(--s2);color:var(--t2);cursor:pointer;transition:all .15s;user-select:none;-webkit-user-select:none;display:inline-block;position:relative;z-index:1}
+.tog:hover{border-color:var(--am);color:var(--am)}
+.tog.sel-amber{background:rgba(245,166,35,.18);border-color:var(--am);color:var(--am)}
+.tog.sel-red{background:rgba(251,113,133,.18);border-color:var(--ro);color:var(--ro)}
+.tog.sel-teal{background:rgba(45,212,191,.18);border-color:var(--tl);color:var(--tl)}
+.tog.sel-green{background:rgba(74,222,128,.18);border-color:var(--gn);color:var(--gn)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:all .18s;user-select:none}
+.btn-am{background:var(--am);color:#0d0f14}
+.btn-am:hover{background:#f7b84a;transform:translateY(-1px);box-shadow:0 4px 14px rgba(245,166,35,.3)}
+.btn-full{width:100%;margin-top:10px}
+.btn-sm{font-family:'DM Mono',monospace;font-size:10px;background:none;border:1px solid var(--bd);color:var(--t2);padding:5px 11px;border-radius:7px;cursor:pointer;transition:all .18s}
+.btn-sm:hover{border-color:var(--am);color:var(--am)}
+.btn-danger{font-family:'DM Mono',monospace;font-size:10px;background:none;border:1px solid rgba(251,113,133,.3);color:var(--ro);padding:5px 11px;border-radius:7px;cursor:pointer;transition:all .18s}
+.btn-danger:hover{border-color:var(--ro);background:rgba(251,113,133,.08)}
+
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);padding:6px 8px;text-align:left;border-bottom:1px solid var(--bd)}
+.tbl td{padding:7px 8px;border-bottom:1px solid rgba(37,42,58,.5);color:var(--t2)}
+.tbl tr:hover td{background:rgba(245,166,35,.03)}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.03em}
+.bg{background:rgba(74,222,128,.15);color:var(--gn)}
+.br{background:rgba(251,113,133,.15);color:var(--ro)}
+.by{background:rgba(245,166,35,.15);color:var(--am)}
+.bt{background:rgba(45,212,191,.15);color:var(--tl)}
+.bv{background:rgba(167,139,250,.15);color:var(--vi)}
+.bbl{background:rgba(96,165,250,.15);color:var(--bl)}
+.delbtn{background:none;border:none;color:var(--mu);cursor:pointer;font-size:11px;padding:2px 4px}
+.delbtn:hover{color:var(--ro)}
+
+.enbar{display:flex;align-items:center;gap:5px}
+.entrack{flex:1;height:4px;background:var(--bd);border-radius:2px;overflow:hidden;min-width:36px}
+.enfill{height:100%;border-radius:2px}
+
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin-bottom:12px}
+.cbox{background:var(--s);border:1px solid var(--bd);border-radius:var(--r);padding:14px}
+.cbox.wide{grid-column:1/-1}
+.ctit{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mu);margin-bottom:10px}
+.cwrap{position:relative;height:170px}
+.cwrap.tall{height:230px}
+
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-bottom:12px}
+.bcard{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;position:relative;overflow:hidden}
+.bcard::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
+.b-rec::after{background:var(--gn)}.b-neu::after{background:var(--am)}.b-avo::after{background:var(--ro)}
+.bname{font-size:13px;font-weight:700;margin-bottom:2px}
+.btype{font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);margin-bottom:9px}
+.bstat{display:flex;justify-content:space-between;font-size:11px;color:var(--t2);margin-bottom:4px}
+.bstat strong{color:var(--tx)}
+.mbar{height:3px;background:var(--bd);border-radius:2px;margin:3px 0 7px;overflow:hidden}
+.mfill{height:100%;border-radius:2px}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{display:flex;align-items:center;gap:5px;background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:600}
+.cdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dg{background:var(--gn)}.dy{background:var(--am)}.dr{background:var(--ro)}.dt{background:var(--tl)}
+
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-bottom:12px}
+.acard{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;position:relative;overflow:hidden}
+.acard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.a1::before{background:var(--am)}.a2::before{background:var(--tl)}.a3::before{background:var(--ro)}
+.a4::before{background:var(--vi)}.a5::before{background:var(--gn)}.a6::before{background:var(--or)}
+.albl{font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin-bottom:9px}
+.a1 .albl{color:var(--am)}.a2 .albl{color:var(--tl)}.a3 .albl{color:var(--ro)}
+.a4 .albl{color:var(--vi)}.a5 .albl{color:var(--gn)}.a6 .albl{color:var(--or)}
+.abody{font-size:11px;line-height:1.8;color:var(--t2)}
+.abody strong{color:var(--tx)}
+.awide{grid-column:1/-1}
+
+.empty{text-align:center;padding:40px 20px;color:var(--mu)}
+.empty .eico{font-size:32px;margin-bottom:10px}
+.empty p{font-size:12px;line-height:1.7}
+
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.rcard{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:10px}
+.rhead{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:6px}
+.ritem{font-size:11px;color:var(--t2);margin-bottom:3px;display:flex;gap:5px;align-items:flex-start}
+.rdot{width:3px;height:3px;border-radius:50%;background:var(--am);margin-top:5px;flex-shrink:0}
+.rkcal{font-family:'DM Mono',monospace;font-size:9px;color:var(--am);margin-top:4px}
+
+.storage-bar{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;font-size:11px}
+.storage-bar span{color:var(--t2)}
+.storage-bar strong{color:var(--gn)}
+
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="logo"><div class="lico">🐱</div><div class="ltx">Wayne's <span>World</span></div></div>
+  <div class="nav-tabs">
+    <button class="nt active" id="tab-log">📝 Log</button>
+    <button class="nt" id="tab-charts">📊 Charts</button>
+    <button class="nt" id="tab-brands">🏷️ Brands</button>
+    <button class="nt" id="tab-analysis">🔬 Analysis</button>
+  </div>
+  <span class="save-indicator" id="save-indicator">✓ Saved</span>
+</div>
+
+<!-- ══ LOG ══ -->
+<div class="page active" id="page-log">
+
+  <div class="pbanner">
+    <div class="pav">🐱</div>
+    <div class="pi"><h2>Wayne</h2><p>Male · ~11 lbs · 1 yr · Sacramento, CA · Orijen + Greenies</p></div>
+    <div class="stat-pills">
+      <div class="pill"><div class="pill-n" id="s-days">0</div><div class="pill-l">Days</div></div>
+      <div class="pill"><div class="pill-n" id="s-en">—</div><div class="pill-l">Avg Energy</div></div>
+      <div class="pill"><div class="pill-n" id="s-score">—</div><div class="pill-l">Score/10</div></div>
+    </div>
+  </div>
+
+  <!-- Storage bar -->
+  <div class="storage-bar" id="storage-bar">
+    <span>💾 Auto-save: <strong id="storage-status">Loading…</strong></span>
+    <span id="storage-count" style="color:var(--mu)"></span>
+    <button class="btn-danger" id="clear-data-btn" style="margin-left:auto">🗑 Clear All Data</button>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">📋 Wayne's Daily Routine</div>
+    <div class="rgrid">
+      <div class="rcard"><div class="rhead">🌅 Morning</div>
+        <div class="ritem"><span class="rdot"></span>½ can Orijen wet (45 kcal)</div>
+        <div class="ritem"><span class="rdot"></span>2½ tbsp Orijen dry (80 kcal)</div>
+        <div class="ritem"><span class="rdot"></span>15 min play</div>
+        <div class="rkcal">~125 kcal</div>
+      </div>
+      <div class="rcard"><div class="rhead">🌙 Evening</div>
+        <div class="ritem"><span class="rdot"></span>½ can Orijen wet (45 kcal)</div>
+        <div class="ritem"><span class="rdot"></span>2½ tbsp Orijen dry (80 kcal)</div>
+        <div class="ritem"><span class="rdot"></span>15 min play</div>
+        <div class="rkcal">~125 kcal</div>
+      </div>
+      <div class="rcard"><div class="rhead">🦷 Treats</div>
+        <div class="ritem"><span class="rdot"></span>Greenies dental × 9</div>
+        <div class="ritem"><span class="rdot"></span>Given 2× daily</div>
+        <div class="rkcal">~25 kcal</div>
+      </div>
+      <div class="rcard"><div class="rhead">🏠 Home</div>
+        <div class="ritem"><span class="rdot"></span>Fumoi 95L self-cleaning</div>
+        <div class="ritem"><span class="rdot"></span>2 water fountains</div>
+        <div class="ritem"><span class="rdot"></span>Scratchers + trees</div>
+        <div class="rkcal">Total ~280 kcal/day</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">✏️ Log Today's Entry</div>
+    <div class="fgrid">
+      <div class="fg"><label>Date</label><input type="date" id="f-date"></div>
+      <div class="fg"><label>Weight (lbs)</label><input type="number" id="f-weight" placeholder="11.0" step="0.1" min="6" max="20"></div>
+      <div class="fg"><label>Food Brand</label>
+        <select id="f-food">
+          <option value="Orijen">Orijen (wet + dry)</option>
+          <option value="Orijen Dry Only">Orijen Dry Only</option>
+          <option value="Orijen Wet Only">Orijen Wet Only</option>
+          <option value="Fancy Feast">Fancy Feast</option>
+          <option value="Royal Canin">Royal Canin</option>
+          <option value="Wellness">Wellness</option>
+          <option value="Purina Pro Plan">Purina Pro Plan</option>
+          <option value="Hill's Science Diet">Hill's Science Diet</option>
+          <option value="Blue Buffalo">Blue Buffalo</option>
+          <option value="Tiki Cat">Tiki Cat</option>
+          <option value="Other">Other…</option>
+        </select>
+      </div>
+      <div class="fg"><label>Treat Brand</label>
+        <select id="f-treat">
+          <option value="Greenies">Greenies Dental</option>
+          <option value="Temptations">Temptations</option>
+          <option value="Churu">Churu Lickable</option>
+          <option value="Delectables">Delectables</option>
+          <option value="None">No treats today</option>
+          <option value="Other">Other…</option>
+        </select>
+      </div>
+    </div>
+    <div class="fgrid" id="other-row" style="display:none">
+      <div class="fg"><label>Food Brand Name</label><input type="text" id="f-food-other" placeholder="e.g. Ziwi Peak"></div>
+      <div class="fg"><label>Treat Brand Name</label><input type="text" id="f-treat-other" placeholder="e.g. Squeeze Up"></div>
+    </div>
+
+    <div class="srow">
+      <span class="slbl">Energy</span>
+      <input type="range" id="f-energy" min="1" max="10" value="7">
+      <span class="sval" id="d-energy">7</span>
+    </div>
+    <div class="srow">
+      <span class="slbl">Play (min)</span>
+      <input type="range" id="f-play" min="0" max="90" value="30" step="5">
+      <span class="sval" id="d-play">30m</span>
+    </div>
+    <div class="srow">
+      <span class="slbl">Treats given</span>
+      <input type="range" id="f-treats" min="0" max="30" value="18">
+      <span class="sval" id="d-treats">18</span>
+    </div>
+
+    <div class="tog-section">
+      <div class="tog-label">Mood / Behavior</div>
+      <div class="tog-row" id="grp-mood">
+        <button class="tog sel-amber" data-val="Playful">😺 Playful</button>
+        <button class="tog" data-val="Calm">😌 Calm</button>
+        <button class="tog" data-val="Affectionate">😻 Affectionate</button>
+        <button class="tog" data-val="Lethargic">😴 Lethargic</button>
+        <button class="tog" data-val="Anxious">😿 Anxious</button>
+        <button class="tog" data-val="Hiding">🙈 Hiding</button>
+        <button class="tog" data-val="Aggressive">😾 Aggressive</button>
+      </div>
+    </div>
+    <div class="tog-section">
+      <div class="tog-label">Appetite</div>
+      <div class="tog-row" id="grp-app">
+        <button class="tog sel-teal" data-val="Normal">✅ Normal</button>
+        <button class="tog" data-val="Less">⬇️ Ate less</button>
+        <button class="tog" data-val="More">⬆️ Ate more</button>
+        <button class="tog" data-val="Refused">❌ Refused</button>
+      </div>
+    </div>
+    <div class="tog-section">
+      <div class="tog-label">Litter Box (Fumoi)</div>
+      <div class="tog-row" id="grp-lit">
+        <button class="tog sel-teal" data-val="Normal">✅ Normal AM</button>
+        <button class="tog" data-val="Multiple">🔄 Multiple</button>
+        <button class="tog" data-val="Skipped">⛔ Skipped</button>
+        <button class="tog" data-val="Loose stool">⚠️ Loose stool</button>
+        <button class="tog" data-val="Straining">🚨 Straining</button>
+      </div>
+    </div>
+    <div class="tog-section">
+      <div class="tog-label">Hydration</div>
+      <div class="tog-row" id="grp-hydra">
+        <button class="tog sel-teal" data-val="Normal">✅ Normal</button>
+        <button class="tog" data-val="Less">⬇️ Less</button>
+        <button class="tog" data-val="More">⬆️ More</button>
+        <button class="tog" data-val="Unobserved">👀 Didn't observe</button>
+      </div>
+    </div>
+    <div class="tog-section">
+      <div class="tog-label">Health Flags (tap all that apply)</div>
+      <div class="tog-row" id="grp-flags">
+        <button class="tog sel-green" data-val="Clear">✅ All clear</button>
+        <button class="tog" data-val="Vomiting">🤢 Vomiting</button>
+        <button class="tog" data-val="Hairball">🧶 Hairball</button>
+        <button class="tog" data-val="Sneezing">🤧 Sneezing</button>
+        <button class="tog" data-val="Limping">🦴 Limping</button>
+        <button class="tog" data-val="Eye discharge">👁️ Eye discharge</button>
+        <button class="tog" data-val="Excess shedding">🐾 Excess shedding</button>
+      </div>
+    </div>
+
+    <div class="fgrid">
+      <div class="fg"><label>Coat condition</label>
+        <select id="f-coat">
+          <option>Shiny &amp; clean</option>
+          <option>Normal</option>
+          <option>Some shedding</option>
+          <option>Dull or patchy</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:12px">
+      <label>Notes (optional)</label>
+      <textarea id="f-notes" placeholder="Anything unusual — extra cuddly, new behavior, ignored scratcher..."></textarea>
+    </div>
+    <button class="btn btn-am btn-full" id="save-btn">＋ Save Today's Entry</button>
+  </div>
+
+  <div class="card" id="log-card" style="display:none">
+    <div class="ctitle" style="justify-content:space-between;display:flex;align-items:center">
+      <span>📅 Log — <span id="log-count">0</span> entries</span>
+      <button class="btn-sm" id="go-charts-btn">Charts →</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr><th>Date</th><th>Food</th><th>Energy</th><th>Mood</th><th>Litter</th><th>Flags</th><th>Weight</th><th></th></tr></thead>
+        <tbody id="log-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CHARTS ══ -->
+<div class="page" id="page-charts">
+  <div id="charts-empty" class="empty"><div class="eico">📊</div><p>Log at least <strong>2 days</strong> to unlock Wayne's charts.</p></div>
+  <div id="charts-content" style="display:none">
+    <div class="cgrid">
+      <div class="cbox wide"><div class="ctit">⚡ Energy Level Over Time</div><div class="cwrap tall"><canvas id="ch-en"></canvas></div></div>
+      <div class="cbox"><div class="ctit">⚖️ Weight Trend</div><div class="cwrap"><canvas id="ch-wt"></canvas></div></div>
+      <div class="cbox"><div class="ctit">😺 Mood Distribution</div><div class="cwrap"><canvas id="ch-mood"></canvas></div></div>
+      <div class="cbox"><div class="ctit">🏃 Play Minutes / Day</div><div class="cwrap"><canvas id="ch-play"></canvas></div></div>
+      <div class="cbox"><div class="ctit">🚽 Litter Box Breakdown</div><div class="cwrap"><canvas id="ch-lit"></canvas></div></div>
+      <div class="cbox"><div class="ctit">⚡ Energy by Food Brand</div><div class="cwrap"><canvas id="ch-ben"></canvas></div></div>
+      <div class="cbox wide"><div class="ctit">📈 Rolling Health Score</div><div class="cwrap"><canvas id="ch-score"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BRANDS ══ -->
+<div class="page" id="page-brands">
+  <div class="chips" id="brand-chips"></div>
+  <div class="bgrid" id="brand-cards"></div>
+  <div class="card">
+    <div class="ctitle">📋 Brand Comparison Table</div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr><th>Brand</th><th>Type</th><th>Days</th><th>Avg Energy</th><th>Stability</th><th>Mood Score</th><th>GI Issues</th><th>Flag Days</th><th>Rating</th></tr></thead>
+        <tbody id="brand-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="cgrid" style="margin-top:12px">
+    <div class="cbox"><div class="ctit">⚡ Energy by Food Brand</div><div class="cwrap"><canvas id="ch-ben2"></canvas></div></div>
+    <div class="cbox"><div class="ctit">😺 Mood Score by Food Brand</div><div class="cwrap"><canvas id="ch-bmood"></canvas></div></div>
+    <div class="cbox"><div class="ctit">🦷 Energy by Treat Brand</div><div class="cwrap"><canvas id="ch-ten"></canvas></div></div>
+    <div class="cbox"><div class="ctit">📊 Stability (lower σ = better)</div><div class="cwrap"><canvas id="ch-bstab"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ══ ANALYSIS ══ -->
+<div class="page" id="page-analysis">
+  <div id="an-empty" class="empty"><div class="eico">🔬</div><p>Log some entries first — then come back for Wayne's full report.</p></div>
+  <div id="an-content" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="font-family:'DM Serif Display',serif;font-size:20px">Wayne's Health Report</div>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--mu)" id="an-ts"></span>
+    </div>
+    <div class="chips" id="an-chips"></div>
+    <div class="agrid">
+      <div class="acard a1"><div class="albl">📋 Executive Summary</div><div class="abody" id="an-exec"></div></div>
+      <div class="acard a2"><div class="albl">📈 Key Trends</div><div class="abody" id="an-trends"></div></div>
+      <div class="acard a3"><div class="albl">⚠️ Risk Signals</div><div class="abody" id="an-risk"></div></div>
+      <div class="acard a4"><div class="albl">🧠 Behavioral Insights</div><div class="abody" id="an-behav"></div></div>
+      <div class="acard a5"><div class="albl">🔮 7-Day Predictions</div><div class="abody" id="an-pred"></div></div>
+      <div class="acard a6 awide"><div class="albl">💡 Recommendations</div><div class="abody" id="an-recs"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+// ── STORAGE KEY ────────────────────────────────────────
+var STORAGE_KEY = 'waynesworld_v1';
+
+// ── STATE ──────────────────────────────────────────────
+var log = [];
+var picks = { mood:'Playful', app:'Normal', lit:'Normal', hydra:'Normal', flags:['Clear'] };
+var charts = {};
+
+// ── LOCALSTORAGE ───────────────────────────────────────
+function saveToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(log));
+    document.getElementById('storage-status').textContent = 'Active ✓';
+    document.getElementById('storage-status').style.color = 'var(--gn)';
+    document.getElementById('storage-count').textContent = log.length + ' entr' + (log.length === 1 ? 'y' : 'ies') + ' saved in browser';
+    var ind = document.getElementById('save-indicator');
+    ind.classList.add('show');
+    setTimeout(function(){ ind.classList.remove('show'); }, 2000);
+  } catch(e) {
+    document.getElementById('storage-status').textContent = 'Unavailable';
+    document.getElementById('storage-status').style.color = 'var(--ro)';
+  }
+}
+
+function loadFromStorage() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      log = JSON.parse(raw);
+      document.getElementById('storage-status').textContent = 'Active ✓';
+      document.getElementById('storage-status').style.color = 'var(--gn)';
+      document.getElementById('storage-count').textContent = log.length + ' entr' + (log.length === 1 ? 'y' : 'ies') + ' saved in browser';
+    } else {
+      document.getElementById('storage-status').textContent = 'Active — no data yet';
+      document.getElementById('storage-status').style.color = 'var(--am)';
+      document.getElementById('storage-count').textContent = 'Start logging to save Wayne\'s data';
+    }
+  } catch(e) {
+    document.getElementById('storage-status').textContent = 'Unavailable in this browser';
+    document.getElementById('storage-status').style.color = 'var(--ro)';
+  }
+}
+
+// ── INIT ───────────────────────────────────────────────
+loadFromStorage();
+document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+if (log.length > 0) {
+  renderLog();
+  updateStats();
+  document.getElementById('log-card').style.display = 'block';
+}
+
+// Clear data button
+document.getElementById('clear-data-btn').addEventListener('click', function(){
+  if (confirm('Delete ALL of Wayne\'s logged data? This cannot be undone.')) {
+    log = [];
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+    renderLog();
+    updateStats();
+    document.getElementById('log-card').style.display = 'none';
+    document.getElementById('storage-count').textContent = 'All data cleared';
+    document.getElementById('storage-status').textContent = 'Active — no data yet';
+    document.getElementById('storage-status').style.color = 'var(--am)';
+  }
+});
+
+// ── NAV ────────────────────────────────────────────────
+['log','charts','brands','analysis'].forEach(function(id){
+  document.getElementById('tab-'+id).addEventListener('click', function(){
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    document.querySelectorAll('.nt').forEach(function(t){ t.classList.remove('active'); });
+    document.getElementById('page-'+id).classList.add('active');
+    this.classList.add('active');
+    if (id === 'charts')   buildCharts();
+    if (id === 'brands')   buildBrands();
+    if (id === 'analysis') buildAnalysis();
+  });
+});
+
+document.getElementById('go-charts-btn').addEventListener('click', function(){
+  document.getElementById('tab-charts').click();
+});
+
+// ── TOGGLES ────────────────────────────────────────────
+function setupSingle(grpId, stateKey, colorClass) {
+  document.getElementById(grpId).querySelectorAll('.tog').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      document.getElementById(grpId).querySelectorAll('.tog').forEach(function(b){ b.className='tog'; });
+      this.classList.add('tog');
+      this.classList.add(colorClass);
+      picks[stateKey] = this.getAttribute('data-val');
+    });
+  });
+}
+
+document.getElementById('grp-mood').querySelectorAll('.tog').forEach(function(btn){
+  btn.addEventListener('click', function(e){
+    e.preventDefault();
+    document.getElementById('grp-mood').querySelectorAll('.tog').forEach(function(b){ b.className='tog'; });
+    var val = this.getAttribute('data-val');
+    var neg = ['Lethargic','Anxious','Hiding','Aggressive'];
+    this.classList.add(neg.indexOf(val) > -1 ? 'sel-red' : 'sel-amber');
+    picks.mood = val;
+  });
+});
+
+setupSingle('grp-app',   'app',   'sel-teal');
+setupSingle('grp-lit',   'lit',   'sel-teal');
+setupSingle('grp-hydra', 'hydra', 'sel-teal');
+
+document.getElementById('grp-flags').querySelectorAll('.tog').forEach(function(btn){
+  btn.addEventListener('click', function(e){
+    e.preventDefault();
+    var val = this.getAttribute('data-val');
+    if (val === 'Clear') {
+      picks.flags = ['Clear'];
+      document.getElementById('grp-flags').querySelectorAll('.tog').forEach(function(b){ b.className='tog'; });
+      this.classList.add('sel-green');
+    } else {
+      document.querySelector('#grp-flags [data-val="Clear"]').className = 'tog';
+      var idx = picks.flags.indexOf(val);
+      if (idx > -1) { picks.flags.splice(idx,1); this.className='tog'; }
+      else           { picks.flags.push(val);     this.classList.add('sel-red'); }
+      if (picks.flags.length === 0) {
+        picks.flags = ['Clear'];
+        document.querySelector('#grp-flags [data-val="Clear"]').classList.add('sel-green');
+      }
+    }
+  });
+});
+
+document.getElementById('f-food').addEventListener('change', function(){
+  document.getElementById('other-row').style.display =
+    (this.value==='Other' || document.getElementById('f-treat').value==='Other') ? 'grid' : 'none';
+});
+document.getElementById('f-treat').addEventListener('change', function(){
+  document.getElementById('other-row').style.display =
+    (this.value==='Other' || document.getElementById('f-food').value==='Other') ? 'grid' : 'none';
+});
+
+document.getElementById('f-energy').addEventListener('input', function(){ document.getElementById('d-energy').textContent = this.value; });
+document.getElementById('f-play').addEventListener('input',   function(){ document.getElementById('d-play').textContent   = this.value+'m'; });
+document.getElementById('f-treats').addEventListener('input', function(){ document.getElementById('d-treats').textContent  = this.value; });
+
+// ── SAVE ENTRY ─────────────────────────────────────────
+document.getElementById('save-btn').addEventListener('click', function(){
+  var date = document.getElementById('f-date').value;
+  if (!date) { alert('Please pick a date.'); return; }
+  if (log.find(function(e){ return e.date===date; })) {
+    if (!confirm('Entry for '+date+' exists. Replace it?')) return;
+    log = log.filter(function(e){ return e.date!==date; });
+  }
+  var fv = document.getElementById('f-food').value;
+  var tv = document.getElementById('f-treat').value;
+  log.push({
+    date:   date,
+    food:   fv==='Other' ? (document.getElementById('f-food-other').value  || 'Other') : fv,
+    treat:  tv==='Other' ? (document.getElementById('f-treat-other').value || 'Other') : tv,
+    energy: +document.getElementById('f-energy').value,
+    play:   +document.getElementById('f-play').value,
+    treats: +document.getElementById('f-treats').value,
+    mood:   picks.mood,
+    app:    picks.app,
+    lit:    picks.lit,
+    hydra:  picks.hydra,
+    flags:  [].concat(picks.flags),
+    coat:   document.getElementById('f-coat').value,
+    weight: parseFloat(document.getElementById('f-weight').value) || null,
+    notes:  document.getElementById('f-notes').value.trim()
+  });
+  log.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  saveToStorage();
+  renderLog();
+  updateStats();
+  resetForm();
+  document.getElementById('log-card').style.display = 'block';
+  document.getElementById('log-card').scrollIntoView({ behavior:'smooth', block:'nearest' });
+});
+
+function resetForm() {
+  var d = new Date(document.getElementById('f-date').value + 'T12:00:00');
+  d.setDate(d.getDate() + 1);
+  document.getElementById('f-date').value   = d.toISOString().split('T')[0];
+  document.getElementById('f-energy').value = 7;  document.getElementById('d-energy').textContent = '7';
+  document.getElementById('f-play').value   = 30; document.getElementById('d-play').textContent   = '30m';
+  document.getElementById('f-treats').value = 18; document.getElementById('d-treats').textContent  = '18';
+  document.getElementById('f-weight').value = '';
+  document.getElementById('f-notes').value  = '';
+  document.getElementById('grp-mood').querySelectorAll('.tog').forEach(function(b,i){ b.className='tog'+(i===0?' sel-amber':''); });
+  document.getElementById('grp-app').querySelectorAll('.tog').forEach(function(b,i){  b.className='tog'+(i===0?' sel-teal':''); });
+  document.getElementById('grp-lit').querySelectorAll('.tog').forEach(function(b,i){  b.className='tog'+(i===0?' sel-teal':''); });
+  document.getElementById('grp-hydra').querySelectorAll('.tog').forEach(function(b,i){ b.className='tog'+(i===0?' sel-teal':''); });
+  document.getElementById('grp-flags').querySelectorAll('.tog').forEach(function(b,i){ b.className='tog'+(i===0?' sel-green':''); });
+  picks = { mood:'Playful', app:'Normal', lit:'Normal', hydra:'Normal', flags:['Clear'] };
+}
+
+// ── RENDER LOG TABLE ───────────────────────────────────
+function renderLog() {
+  document.getElementById('log-count').textContent = log.length;
+  var html = log.map(function(e,i){
+    var ec = e.energy>=8 ? 'var(--gn)' : e.energy>=5 ? 'var(--am)' : 'var(--ro)';
+    var mb = ['Playful','Calm','Affectionate'].indexOf(e.mood)>-1 ? 'bg' : 'br';
+    var lb = e.lit==='Normal' ? 'bt' : ['Loose stool','Straining','Skipped'].indexOf(e.lit)>-1 ? 'br' : 'by';
+    var fb = e.flags.indexOf('Clear')>-1
+      ? '<span class="badge bg">Clear</span>'
+      : e.flags.map(function(f){ return '<span class="badge br">'+f+'</span>'; }).join(' ');
+    return '<tr>'
+      +'<td style="color:var(--tx);font-weight:600;white-space:nowrap">'+fd(e.date)+'</td>'
+      +'<td><span class="badge bbl">'+e.food+'</span></td>'
+      +'<td><div class="enbar"><div class="entrack"><div class="enfill" style="width:'+e.energy*10+'%;background:'+ec+'"></div></div>'
+      +'<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:'+ec+';min-width:14px">'+e.energy+'</span></div></td>'
+      +'<td><span class="badge '+mb+'">'+e.mood+'</span></td>'
+      +'<td><span class="badge '+lb+'">'+e.lit+'</span></td>'
+      +'<td>'+fb+'</td>'
+      +'<td style="font-family:\'DM Mono\',monospace;font-size:10px">'+(e.weight?e.weight+' lbs':'—')+'</td>'
+      +'<td><button class="delbtn" data-i="'+i+'">✕</button></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('log-body').innerHTML = html;
+  document.getElementById('log-body').querySelectorAll('.delbtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var i = +this.getAttribute('data-i');
+      if (confirm('Remove this entry?')) {
+        log.splice(i, 1);
+        saveToStorage();
+        renderLog();
+        updateStats();
+      }
+    });
+  });
+}
+
+function fd(ds) {
+  return new Date(ds+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+
+function updateStats() {
+  var n = log.length;
+  document.getElementById('s-days').textContent = n;
+  if (!n) { document.getElementById('s-en').textContent='—'; document.getElementById('s-score').textContent='—'; return; }
+  document.getElementById('s-en').textContent    = (log.reduce(function(s,e){ return s+e.energy; },0)/n).toFixed(1);
+  document.getElementById('s-score').textContent = calcScore().toFixed(1);
+}
+
+function calcScore() {
+  var n = log.length; if (!n) return 0;
+  var s = 10;
+  s -= (log.filter(function(e){ return e.energy<=4; }).length/n)*2.5;
+  s -= (log.filter(function(e){ return e.flags.indexOf('Clear')<0; }).length/n)*2;
+  s -= (log.filter(function(e){ return ['Skipped','Loose stool','Straining'].indexOf(e.lit)>-1; }).length/n)*2.5;
+  s -= (log.filter(function(e){ return ['Less','Refused'].indexOf(e.app)>-1; }).length/n)*1.5;
+  s -= (log.filter(function(e){ return e.play<10; }).length/n)*1;
+  return Math.max(1, Math.min(10, Math.round(s*10)/10));
+}
+
+function moodScore(m) {
+  return {Playful:10,Affectionate:9,Calm:7,Normal:7,Anxious:4,Lethargic:3,Hiding:2,Aggressive:2}[m]||5;
+}
+
+// ── CHART HELPERS ──────────────────────────────────────
+var BCOLS = ['#f5a623','#2dd4bf','#a78bfa','#4ade80','#fb7185','#60a5fa','#fb923c'];
+var BASE = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#1c2030',borderColor:'#252a3a',borderWidth:1,titleColor:'#e8ecf5',bodyColor:'#9aa3c0',padding:9} },
+  scales:{
+    x:{ ticks:{color:'#5a6180',font:{size:9,family:'DM Mono'}}, grid:{color:'rgba(37,42,58,.5)'} },
+    y:{ ticks:{color:'#5a6180',font:{size:9,family:'DM Mono'}}, grid:{color:'rgba(37,42,58,.5)'} }
+  }
+};
+
+function mk(id, type, data, extra) {
+  if (charts[id]) charts[id].destroy();
+  var el = document.getElementById(id); if (!el) return;
+  charts[id] = new Chart(el, { type:type, data:data, options:Object.assign({},BASE,extra||{}) });
+}
+
+// ── BUILD CHARTS ───────────────────────────────────────
+function buildCharts() {
+  var n = log.length;
+  document.getElementById('charts-empty').style.display   = n<2 ? 'block' : 'none';
+  document.getElementById('charts-content').style.display = n>=2 ? 'block' : 'none';
+  if (n < 2) return;
+
+  var labels   = log.map(function(e){ return fd(e.date); });
+  var enData   = log.map(function(e){ return e.energy; });
+  var playData = log.map(function(e){ return e.play; });
+  var avg      = +(enData.reduce(function(a,b){return a+b;},0)/n).toFixed(1);
+
+  mk('ch-en','line',{labels:labels,datasets:[
+    {label:'Energy',data:enData,borderColor:'#f5a623',backgroundColor:'rgba(245,166,35,.08)',fill:true,tension:.4,
+     pointBackgroundColor:enData.map(function(v){return v>=8?'#4ade80':v>=5?'#f5a623':'#fb7185';}),pointRadius:5,borderWidth:2},
+    {label:'Avg',data:Array(n).fill(avg),borderColor:'rgba(45,212,191,.35)',borderDash:[4,4],pointRadius:0,borderWidth:1}
+  ]},{scales:{x:BASE.scales.x,y:Object.assign({},BASE.scales.y,{min:0,max:10})}});
+
+  var wlog = log.filter(function(e){return e.weight;});
+  if (wlog.length > 0) {
+    mk('ch-wt','line',{labels:wlog.map(function(e){return fd(e.date);}),datasets:[
+      {label:'Weight',data:wlog.map(function(e){return e.weight;}),borderColor:'#a78bfa',
+       backgroundColor:'rgba(167,139,250,.08)',fill:true,tension:.4,pointRadius:4,borderWidth:2}
+    ]},{scales:{x:BASE.scales.x,y:Object.assign({},BASE.scales.y,{
+      min:Math.min.apply(null,wlog.map(function(e){return e.weight;}))-0.3,
+      max:Math.max.apply(null,wlog.map(function(e){return e.weight;}))+0.3
+    })}});
+  }
+
+  var mc={};
+  log.forEach(function(e){ mc[e.mood]=(mc[e.mood]||0)+1; });
+  var mcolMap={Playful:'#4ade80',Calm:'#2dd4bf',Affectionate:'#f5a623',Lethargic:'#fb7185',Anxious:'#fb923c',Hiding:'#f472b6',Aggressive:'#ef4444'};
+  mk('ch-mood','doughnut',{labels:Object.keys(mc),datasets:[{data:Object.values(mc),
+    backgroundColor:Object.keys(mc).map(function(m){return mcolMap[m]||'#5a6180';}),borderWidth:0}]},
+    {plugins:{legend:{display:true,position:'right',labels:{color:'#9aa3c0',font:{size:9,family:'DM Mono'},boxWidth:8,padding:6}}},scales:{}});
+
+  mk('ch-play','bar',{labels:labels,datasets:[{label:'Play min',data:playData,
+    backgroundColor:playData.map(function(v){return v>=30?'rgba(74,222,128,.7)':v>=15?'rgba(245,166,35,.7)':'rgba(251,113,133,.7)';}),
+    borderRadius:5,borderSkipped:false}]},{scales:{x:BASE.scales.x,y:Object.assign({},BASE.scales.y,{min:0,max:90})}});
+
+  var lc={};
+  log.forEach(function(e){ lc[e.lit]=(lc[e.lit]||0)+1; });
+  mk('ch-lit','doughnut',{labels:Object.keys(lc),datasets:[{data:Object.values(lc),
+    backgroundColor:['#2dd4bf','#f5a623','#fb7185','#ef4444','#f97316'],borderWidth:0}]},
+    {plugins:{legend:{display:true,position:'right',labels:{color:'#9aa3c0',font:{size:9,family:'DM Mono'},boxWidth:8,padding:6}}},scales:{}});
+
+  var bm={};
+  log.forEach(function(e){ if(!bm[e.food]) bm[e.food]=[]; bm[e.food].push(e.energy); });
+  var bnames = Object.keys(bm);
+  var bavg   = bnames.map(function(b){ return +(bm[b].reduce(function(a,c){return a+c;},0)/bm[b].length).toFixed(1); });
+  mk('ch-ben','bar',{labels:bnames,datasets:[{label:'Avg Energy',data:bavg,
+    backgroundColor:bnames.map(function(_,i){return BCOLS[i%BCOLS.length]+'cc';}),borderRadius:6,borderSkipped:false}]},
+    {scales:{x:BASE.scales.x,y:Object.assign({},BASE.scales.y,{min:0,max:10})}});
+
+  var scores = log.map(function(_,i){
+    var sl=log.slice(0,i+1),sn=sl.length,sc=10;
+    sc-=(sl.filter(function(x){return x.energy<=4;}).length/sn)*2.5;
+    sc-=(sl.filter(function(x){return x.flags.indexOf('Clear')<0;}).length/sn)*2;
+    sc-=(sl.filter(function(x){return ['Skipped','Loose stool','Straining'].indexOf(x.lit)>-1;}).length/sn)*2.5;
+    sc-=(sl.filter(function(x){return ['Less','Refused'].indexOf(x.app)>-1;}).length/sn)*1.5;
+    return Math.max(1,Math.min(10,Math.round(sc*10)/10));
+  });
+  mk('ch-score','line',{labels:labels,datasets:[{label:'Score',data:scores,borderColor:'#4ade80',
+    backgroundColor:'rgba(74,222,128,.07)',fill:true,tension:.4,pointRadius:4,borderWidth:2,
+    pointBackgroundColor:scores.map(function(s){return s>=8?'#4ade80':s>=6?'#f5a623':'#fb7185';})}]},
+    {scales:{x:BASE.scales.x,y:Object.assign({},BASE.scales.y,{min:0,max:10})}});
+}
+
+// ── BUILD BRANDS ───────────────────────────────────────
+function buildBrands() {
+  var seedFood  = { 'Orijen':   {energies:[8],moods:[8],litBad:0,flags:0,days:1,seeded:true} };
+  var seedTreat = { 'Greenies': {energies:[8],days:1,seeded:true} };
+  var foodData  = JSON.parse(JSON.stringify(seedFood));
+  var treatData = JSON.parse(JSON.stringify(seedTreat));
+
+  log.forEach(function(e){
+    if (!foodData[e.food]) foodData[e.food]={energies:[],moods:[],litBad:0,flags:0,days:0,seeded:false};
+    if (foodData[e.food].seeded){ foodData[e.food].energies=[];foodData[e.food].moods=[];foodData[e.food].days=0;foodData[e.food].seeded=false; }
+    foodData[e.food].energies.push(e.energy);
+    foodData[e.food].moods.push(moodScore(e.mood));
+    if (['Skipped','Loose stool','Straining'].indexOf(e.lit)>-1) foodData[e.food].litBad++;
+    if (e.flags.indexOf('Clear')<0) foodData[e.food].flags++;
+    foodData[e.food].days++;
+    if (e.treat && e.treat!=='None') {
+      if (!treatData[e.treat]) treatData[e.treat]={energies:[],days:0,seeded:false};
+      if (treatData[e.treat].seeded){ treatData[e.treat].energies=[];treatData[e.treat].days=0;treatData[e.treat].seeded=false; }
+      treatData[e.treat].energies.push(e.energy);
+      treatData[e.treat].days++;
+    }
+  });
+
+  function avg(arr){ return arr.length ? (arr.reduce(function(a,b){return a+b;},0)/arr.length).toFixed(1) : '—'; }
+  function std(arr){
+    if (arr.length<2) return 0;
+    var m=+avg(arr);
+    return Math.sqrt(arr.map(function(x){return (x-m)*(x-m);}).reduce(function(a,b){return a+b;})/arr.length);
+  }
+  function rating(b){
+    var s=foodData[b],en=+avg(s.energies),lr=s.days?s.litBad/s.days*100:0,fr=s.days?s.flags/s.days*100:0;
+    return (en>=8&&lr<20&&fr<20)?'Recommended':(lr>40||fr>40)?'Avoid':'Neutral';
+  }
+
+  var foods  = Object.keys(foodData);
+  var treats = Object.keys(treatData);
+  var topEn    = foods.length ? foods.reduce(function(a,b){return +avg(foodData[a].energies)>+avg(foodData[b].energies)?a:b;}) : null;
+  var topStab  = foods.length ? foods.reduce(function(a,b){return std(foodData[a].energies)<=std(foodData[b].energies)?a:b;}) : null;
+  var riskB    = foods.find(function(b){ var s=foodData[b]; return s.days>0&&(s.flags/s.days>0.5||s.litBad/s.days>0.5); })||null;
+
+  var chips='';
+  if (topEn)   chips+='<div class="chip"><div class="cdot dy"></div>⚡ Top Energy: <strong style="color:var(--am);margin-left:4px">'+topEn+'</strong></div>';
+  if (topStab) chips+='<div class="chip"><div class="cdot dt"></div>🎯 Most Stable: <strong style="color:var(--tl);margin-left:4px">'+topStab+'</strong></div>';
+  if (riskB)   chips+='<div class="chip"><div class="cdot dr"></div>⚠️ Risk Brand: <strong style="color:var(--ro);margin-left:4px">'+riskB+'</strong></div>';
+  document.getElementById('brand-chips').innerHTML = chips;
+
+  var brandNotes = {
+    'Orijen':'Premium high-protein, biologically appropriate. No fillers or by-products. Supports lean muscle, coat health, and urinary tract. Wayne\'s established primary food at ~250 kcal/day.',
+    'Greenies':'Vet-recommended dental treat. Clinically shown to reduce tartar by up to 60%. ~1.4 kcal/treat. Wayne\'s 18/day = 25 kcal, fitting perfectly within his 280 kcal daily budget.',
+    'Fancy Feast':'Widely available, high palatability wet food. Higher sodium than premium brands. Good for occasional use or appetite stimulation. Lower protein density than Orijen.',
+    'Royal Canin':'Breed/condition-specific formulas. Highly digestible, vet-recommended for sensitive stomachs. Contains more carbohydrates than grain-free options.',
+    'Wellness':'Grain-free premium option. Good protein levels with natural ingredients. Solid second-choice if Orijen is unavailable.',
+    'Purina Pro Plan':'Vet-endorsed, science-backed formulas. Contains some grains. High palatability — good for picky cats. Widely studied with strong safety record.',
+    "Hill's Science Diet":'Clinically tested formulas. Good for weight management. Contains grains. Often recommended post-vet visit for specific conditions.',
+    'Blue Buffalo':'Natural ingredients with LifeSource Bits. Grain-free options available. Verify current batch safety before use.',
+    'Tiki Cat':'High-moisture, fish-based wet food. Excellent for hydration. High protein, low carb. Great for urinary health support.',
+    'Temptations':'High palatability treat. ~2 kcal/treat — higher than Greenies. Great for training. Use sparingly to stay within calorie budget.',
+    'Churu':'Lickable puree treat. Excellent for hydration boost. Low calorie (~1 kcal/tube). Great for medication hiding or bonding.',
+    'Delectables':'Lickable stew-style treat. Moderate calorie. Good for hydration. Good variety for enrichment rotation.'
+  };
+
+  var cardsHtml = foods.map(function(b,i){
+    var s=foodData[b], en=+avg(s.energies), r=rating(b);
+    var rc=r==='Recommended'?'b-rec':r==='Avoid'?'b-avo':'b-neu';
+    var bc=r==='Recommended'?'bg':r==='Avoid'?'br':'by';
+    var col=BCOLS[i%BCOLS.length];
+    var note=brandNotes[b]||'Log more days with this brand to build comparison data.';
+    var sl=s.seeded?'<span class="badge by" style="font-size:8px;margin-left:4px">pre-loaded</span>':'';
+    return '<div class="bcard '+rc+'">'
+      +'<div class="bname">'+b+sl+'</div>'
+      +'<div class="btype">Food · '+(s.seeded?'Wayne\'s primary':s.days+' day'+(s.days!==1?'s':'')+' logged')+'</div>'
+      +'<div class="bstat">Avg Energy <strong>'+avg(s.energies)+'/10</strong></div>'
+      +'<div class="mbar"><div class="mfill" style="width:'+en*10+'%;background:'+col+'"></div></div>'
+      +'<div class="bstat">Mood Score <strong>'+avg(s.moods)+'/10</strong></div>'
+      +'<div class="bstat">GI Issues <strong>'+(s.days?Math.round(s.litBad/s.days*100):0)+'%</strong></div>'
+      +'<div class="bstat">Flag Days <strong>'+(s.days?Math.round(s.flags/s.days*100):0)+'%</strong></div>'
+      +'<div class="bstat">Stability σ <strong>'+std(s.energies).toFixed(2)+'</strong></div>'
+      +'<div style="margin-top:8px;font-size:10px;color:var(--t2);line-height:1.5">'+note+'</div>'
+      +'<div style="margin-top:8px"><span class="badge '+bc+'">'+r+'</span></div>'
+      +'</div>';
+  }).join('');
+
+  var treatHtml = treats.map(function(t,i){
+    var s=treatData[t], en=+avg(s.energies);
+    var note=brandNotes[t]||'Log more treat days to build comparison data.';
+    var sl=s.seeded?'<span class="badge by" style="font-size:8px;margin-left:4px">pre-loaded</span>':'';
+    return '<div class="bcard b-rec">'
+      +'<div class="bname">'+t+sl+'</div>'
+      +'<div class="btype">Treat · '+(s.seeded?'Wayne\'s daily treat':s.days+' day'+(s.days!==1?'s':'')+' logged')+'</div>'
+      +'<div class="bstat">Avg energy on treat day <strong>'+avg(s.energies)+'/10</strong></div>'
+      +'<div class="mbar"><div class="mfill" style="width:'+en*10+'%;background:'+BCOLS[(i+3)%BCOLS.length]+'"></div></div>'
+      +'<div style="margin-top:8px;font-size:10px;color:var(--t2);line-height:1.5">'+note+'</div>'
+      +'<div style="margin-top:8px"><span class="badge bg">Recommended</span></div>'
+      +'</div>';
+  }).join('');
+
+  document.getElementById('brand-cards').innerHTML = cardsHtml + treatHtml;
+
+  var tbodyHtml = foods.map(function(b){
+    var s=foodData[b],en=avg(s.energies),stdev=std(s.energies);
+    var stab=stdev<=1?'High':stdev<=2?'Medium':'Low';
+    var sc=stab==='High'?'bg':stab==='Low'?'br':'by';
+    var r=rating(b), rc=r==='Recommended'?'bg':r==='Avoid'?'br':'by';
+    return '<tr>'
+      +'<td><strong style="color:var(--tx)">'+b+(s.seeded?' <span style="font-size:9px;color:var(--mu)">(pre-loaded)</span>':'')+'</strong></td>'
+      +'<td><span class="badge bbl">food</span></td>'
+      +'<td style="font-family:\'DM Mono\',monospace">'+(s.seeded?'—':s.days)+'</td>'
+      +'<td><strong style="color:var(--am)">'+en+'/10</strong></td>'
+      +'<td><span class="badge '+sc+'">'+stab+'</span></td>'
+      +'<td><strong style="color:var(--vi)">'+avg(s.moods)+'/10</strong></td>'
+      +'<td>'+(s.seeded?'—':Math.round(s.litBad/s.days*100)+'%')+'</td>'
+      +'<td>'+(s.seeded?'—':Math.round(s.flags/s.days*100)+'%')+'</td>'
+      +'<td><span class="badge '+rc+'">'+r+'</span></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('brand-tbody').innerHTML = tbodyHtml;
+
+  if (foods.length > 0) {
+    var fc=foods.map(function(_,i){return BCOLS[i%BCOLS.length]+'cc';});
+    mk('ch-ben2','bar',{labels:foods,datasets:[{label:'Avg Energy',data:foods.map(function(b){return +avg(foodData[b].energies);}),backgroundColor:fc,borderRadius:6,borderSkipped:false}]},{scales:{x:BASE.scales.x,y:Object.assign({},BASE.scales.y,{min:0,max:10})}});
+    mk('ch-bmood','bar',{labels:foods,datasets:[{label:'Mood Score',data:foods.map(function(b){return +avg(foodData[b].moods);}),backgroundColor:foods.map(function(_,i){return BCOLS[(i+2)%BCOLS.length]+'cc';}),borderRadius:6,borderSkipped:false}]},{scales:{x:BASE.scales.x,y:Object.assign({},BASE.scales.y,{min:0,max:10})}});
+    var stds=foods.map(function(b){return +std(foodData[b].energies).toFixed(2);});
+    mk('ch-bstab','bar',{labels:foods,datasets:[{label:'σ',data:stds,backgroundColor:stds.map(function(v){return v<=1?'rgba(74,222,128,.7)':v<=2?'rgba(245,166,35,.7)':'rgba(251,113,133,.7)';}),borderRadius:6,borderSkipped:false}]},{scales:{x:BASE.scales.x,y:Object.assign({},BASE.scales.y,{min:0})}});
+  }
+  if (treats.length > 0) {
+    mk('ch-ten','bar',{labels:treats,datasets:[{label:'Avg Energy',data:treats.map(function(t){return +avg(treatData[t].energies);}),backgroundColor:treats.map(function(_,i){return BCOLS[(i+3)%BCOLS.length]+'cc';}),borderRadius:6,borderSkipped:false}]},{scales:{x:BASE.scales.x,y:Object.assign({},BASE.scales.y,{min:0,max:10})}});
+  }
+}
+
+// ── BUILD ANALYSIS ─────────────────────────────────────
+function buildAnalysis() {
+  var n = log.length;
+  document.getElementById('an-empty').style.display   = n===0 ? 'block' : 'none';
+  document.getElementById('an-content').style.display = n>0   ? 'block' : 'none';
+  if (!n) return;
+
+  var avgEn    = +(log.reduce(function(s,e){return s+e.energy;},0)/n).toFixed(1);
+  var score    = calcScore();
+  var status   = score>=8.5?'Excellent':score>=7?'Good':score>=5?'Fair':'Concerning';
+  var flagDays = log.filter(function(e){return e.flags.indexOf('Clear')<0;}).length;
+  var litBad   = log.filter(function(e){return ['Skipped','Loose stool','Straining'].indexOf(e.lit)>-1;}).length;
+  var lowEn    = log.filter(function(e){return e.energy<=4;}).length;
+  var skipPlay = log.filter(function(e){return e.play<10;}).length;
+  var wts      = log.filter(function(e){return e.weight;}).map(function(e){return e.weight;});
+  var avgW     = wts.length ? (wts.reduce(function(a,b){return a+b;},0)/wts.length).toFixed(1) : null;
+  var wtDiff   = wts.length>=2 ? +(wts[wts.length-1]-wts[0]).toFixed(2) : null;
+  var mc={};
+  log.forEach(function(e){ mc[e.mood]=(mc[e.mood]||0)+1; });
+  var topMood = Object.entries(mc).sort(function(a,b){return b[1]-a[1];})[0];
+  var fd2={};
+  log.forEach(function(e){ fd2[e.food]=(fd2[e.food]||0)+1; });
+  var primaryFood = Object.entries(fd2).sort(function(a,b){return b[1]-a[1];})[0][0];
+
+  var sc2 = score>=8.5?'dg':score>=7?'dy':'dr';
+  document.getElementById('an-chips').innerHTML = [
+    {l:'Status: '+status,c:sc2},{l:'Score: '+score+'/10',c:sc2},
+    {l:'Avg Energy: '+avgEn+'/10',c:avgEn>=7?'dg':'dy'},
+    {l:'Primary Food: '+primaryFood,c:'dt'},
+    {l:'Flag Days: '+flagDays+'/'+n,c:flagDays===0?'dg':flagDays<n/3?'dy':'dr'}
+  ].map(function(c){ return '<div class="chip"><div class="cdot '+c.c+'"></div><span>'+c.l+'</span></div>'; }).join('');
+
+  var risks=[];
+  if (flagDays>0) risks.push('Health flags on <strong>'+flagDays+' of '+n+' day(s)</strong>');
+  if (litBad>0)   risks.push('Litter box issues on <strong>'+litBad+' day(s)</strong> — monitor for GI problems');
+  if (lowEn>0)    risks.push('Low energy (≤4/10) on <strong>'+lowEn+' day(s)</strong>');
+  if (wtDiff!==null&&Math.abs(wtDiff)>0.3) risks.push('Weight '+(wtDiff>0?'gain ↑':'loss ↓')+' of <strong>'+Math.abs(wtDiff)+' lbs</strong>');
+  if (!risks.length) risks.push('✅ No critical risks detected — Wayne is thriving!');
+
+  document.getElementById('an-ts').textContent = 'Generated '+new Date().toLocaleString();
+  document.getElementById('an-exec').innerHTML = 'Wayne is in <strong>'+status+'</strong> health (score <strong>'+score+'/10</strong>) across <strong>'+n+' logged day(s)</strong>. Avg energy <strong>'+avgEn+'/10</strong>. Dominant mood: <strong>'+topMood[0]+'</strong> ('+topMood[1]+'/'+n+' days). Primary food: <strong>'+primaryFood+'</strong>.'+(avgW?' Avg weight: <strong>'+avgW+' lbs</strong>.':'');
+  document.getElementById('an-trends').innerHTML = [
+    'Avg energy <strong>'+avgEn+'/10</strong> — '+(avgEn>=7?'active, healthy range':'below optimal'),
+    'Top mood: <strong>'+topMood[0]+'</strong> ('+topMood[1]+' of '+n+' days)',
+    'Avg play: <strong>'+(log.reduce(function(s,e){return s+e.play;},0)/n).toFixed(0)+' min/day</strong>',
+    'Primary food: <strong>'+primaryFood+'</strong>',
+    flagDays===0?'Zero health flag events logged':'Flag events on '+flagDays+' day(s) — review details'
+  ].map(function(t){return '• '+t;}).join('<br>');
+  document.getElementById('an-risk').innerHTML   = risks.map(function(r){return '• '+r;}).join('<br>');
+  document.getElementById('an-behav').innerHTML  = [
+    'Mood consistency: <strong>'+(topMood[1]===n?'100%':Math.round(topMood[1]/n*100)+'%')+'</strong> '+topMood[0]+' days',
+    'Fumoi self-cleaning litter enables early detection of GI changes',
+    'Dual water fountains support urinary tract health — key for male cats',
+    'Scratchers + trees in all rooms reduce stress and preserve furniture',
+    skipPlay>0?'Play skipped <strong>'+skipPlay+' day(s)</strong> — watch for motivation dips':'Play routine fully maintained — excellent enrichment'
+  ].map(function(b){return '• '+b;}).join('<br>');
+  document.getElementById('an-pred').innerHTML   = [
+    'Energy expected near <strong>'+avgEn+'/10</strong> if Orijen diet is maintained',
+    litBad>0?'Watch litter box — recent GI irregularities may recur':'Litter box expected to stay <strong>routine</strong>',
+    wtDiff!==null&&wtDiff>0.2?'Mild weight gain — consider reducing dry kibble slightly':'Weight expected to hold near <strong>'+(avgW||'~11')+' lbs</strong>',
+    flagDays===0?'No health events anticipated next 7 days':'Monitor for recurrence of flagged symptoms'
+  ].map(function(p){return '• '+p;}).join('<br>');
+  document.getElementById('an-recs').innerHTML   = [
+    '✅ <strong>Keep Orijen wet + dry combo</strong> — optimal at ~280 kcal/day',
+    '🦷 <strong>Maintain Greenies at 18/day</strong> — dental care within calorie budget',
+    '⚖️ <strong>Log weight weekly</strong> — ideal range 10.5–11.5 lbs',
+    skipPlay>0?'🏃 <strong>Re-engage play sessions</strong> — try wand or feather toys':'🏃 <strong>Keep 30-min daily play</strong> — great for weight and mental health',
+    litBad>0?'🚨 <strong>Vet check if GI issues persist</strong> beyond 3 days':'💧 <strong>Rinse water fountains weekly</strong> — critical for kidney health in male cats',
+    flagDays>0?'📋 <strong>Note timing of health flags</strong> — log what preceded each event':'🌿 <strong>Monthly weigh-in recommended</strong> as Wayne approaches adult weight at 2 yrs'
+  ].join('<br>');
+}
+
+})();
+</script>
+</body>
+</html>
